@@ -206,8 +206,9 @@ def consume_openai_stream_to_write_reply(
     function_call: Dict[str, str] = {"name": "", "arguments": ""}
     try:
         loading_character = " ... :writing_hand:"
+        last_chunk_at = time.time()
         for chunk in stream:
-            spent_seconds = time.time() - start_time
+            spent_seconds = time.time() - last_chunk_at
             if timeout_seconds < spent_seconds:
                 raise TimeoutError()
             # Some versions of the Azure OpenAI API return an empty choices array in the first chunk
@@ -218,6 +219,7 @@ def consume_openai_stream_to_write_reply(
                 break
             delta = item.get("delta")
             if delta.get("content") is not None:
+                last_chunk_at = time.time()
                 word_count += 1
                 assistant_reply["content"] += delta.get("content")
                 if word_count >= 20:
